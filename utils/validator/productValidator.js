@@ -136,6 +136,7 @@ exports.getProductValidator = [
         req.body.slug = slugify(val);
         return true;
       }),
+    
     validatorMiddleware,
   ];
   

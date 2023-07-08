@@ -1,22 +1,19 @@
-const express= require('express');
-
+const Path = require('path');
+const cors = require("cors");
+const express = require('express');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
-const categoryRoute=require('./routes/categoryRoute');
-const brandRoute=require('./routes/brandRoute');
+const compression = require('compression')
 
 
-const ApiError=require("./utils/apiError");
+const mountRoute=require("./routes");
 
-const globalError=require('./middleware/errorMiddleware');
+const ApiError = require("./utils/apiError");
 
-
-
-const subCategoryRoute=require('./routes/subCategoryRoute');
-const productRoute=require('./routes/productRoute');
+const globalError = require('./middleware/errorMiddleware');
 
 dotenv.config({ path: 'config.env' });
-const dbConnect=require('./config/database');
+const dbConnect = require('./config/database');
 
 
 // Connect with db
@@ -27,6 +24,11 @@ const app = express();
 
 // Middlewares
 app.use(express.json());
+app.use(cors());
+app.options("*",cors());
+// compress all responses 
+app.use(compression());
+app.use(express.static(Path.join(__dirname + '/uploads')));
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -34,31 +36,29 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Mount Routes
-app.use('/api/v1/categories', categoryRoute);
-app.use('/api/v1/brands', brandRoute);
-app.use('/api/v1/products', productRoute);
+mountRoute(app);
 
 
-app.use('/api/v1/subCategories', subCategoryRoute);
-app.all('*',(req,res,next)=>{
-  
-  
-  next(new ApiError(`can not find this route ${req.originalUrl}`,400));
+
+app.all('*', (req, res, next) => {
+
+
+  next(new ApiError(`can not find this route ${req.originalUrl}`, 400));
 })
 
 app.use(globalError);
 const PORT = process.env.PORT || 8000;
-const server=app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`App running running on port ${PORT}`);
 });
 
 
 //Hande erros outside express.
-process.on("unhandledRejection",(e)=>{
-    console.log(`unhandledRejection Error ${e.name} | ${e.message}`);
-server.close(()=>{
-  console.error(`Shutting down...`)
-  process.exit(1);
+process.on("unhandledRejection", (e) => {
+  console.log(`unhandledRejection Error ${e.name} | ${e.message}`);
+  server.close(() => {
+    console.error(`Shutting down...`)
+    process.exit(1);
 
-})
+  })
 })
